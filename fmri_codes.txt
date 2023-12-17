@@ -1,4 +1,3 @@
-% In the name of God
 % fmri (normalizing FSL beta maps and contrsts to the temporal mean of voxel's BOLD activity):
 3dcalc -a stats/cope1.nii.gz -b mean_func.nii.gz -expr 'a/(abs(b)+1)*astep(b,200)*100' -prefix c1.nii.gz
 
