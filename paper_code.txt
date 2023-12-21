@@ -1,0 +1,43 @@
+
+% fmri (normalizing FSL beta maps and contrsts to the temporal mean of voxel's BOLD activity):
+3dcalc -a stats/cope1.nii.gz -b mean_func.nii.gz -expr 'a/(abs(b)+1)*astep(b,200)*100' -prefix c1.nii.gz
+%*****************************************************************************
+% fmri group analysis:
+3dttest++ -setA  sub1/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub2/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub3/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub4/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub5/dcm2ni/exp5g+.feat/reg_standard/c9.nii.gz sub6/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub7/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub8/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub9/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub10/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub11/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub12/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub13/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub14/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub15/sanei/exp5g.feat/reg_standard/c9.nii.gz  sub16/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz \
+sub17/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz sub18/dcm2ni/exp5g.feat/reg_standard/c9.nii.gz  -prefix avgrighl2 -resid res_righl2
+%*********************************************************************
+% fmri cluster correction:
+
+3dcalc -a avgrighl2+tlrc -b /home/ataei/Desktop/mni_3mm/grey5.nii.gz -expr 'a*b' -prefix righl2.nii.gz
+
+3dFWHMx -acf -mask ~/Desktop/mni_3mm/grey5.nii.gz -input res_righl2+tlrc
+ 
+3dClustSim -mask ~/Desktop/mni_3mm/grey5.nii.gz -acf  0.348376  4.42647  9.16653 -pthr 0.001 0.01 .02 .03 .04 .05 -athr 0.05 -prefix clust_righl2
+
+%****************************************************
+% connectivity codes:
+
+applywarp -i stats/res4d.nii.gz -r reg/standard.nii.gz -o res4d_mni0 --warp=reg/example_func2standard_warp.nii.gz
+
+3dcalc -a res4d_mni0.nii.gz -b reg_standard/mean_func.nii.gz -expr 'a/(abs(b)+1)*astep(b,200)' -prefix res4d_mni.nii.gz
+
+rm res4d_mni0.nii.gz
+
+3dmaskave -q -mask /media/hdd1/users/ataei/Our_experiment/cdt2+tlrc res4d_mni.nii.gz > cdt_timseri.1D
+
+3dDeconvolve -input res4d_mni.nii.gz -polort 0  -num_stimts 1 -stim_file 1 cdt_timseri.1D  -stim_label 1 cdt -fout -tout -rout -x1D Xf9.xmat.1D -xjpeg xfmat9 -xsave -bucket conec.nii.gz
+
+3dcalc -a conec.nii.gz'[4]' -b conec.nii.gz'[2]' -expr 'ispositive(b)*sqrt(a)-isnegative(b)*sqrt(a)' -prefix Corr.nii.gz
+
+3dcalc -a Corr.nii.gz -expr 'atanh(a)' -prefix Corrz.nii.gz
+
+%****************************************************************************
+
+
